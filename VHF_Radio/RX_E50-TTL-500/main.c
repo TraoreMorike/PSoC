@@ -47,12 +47,16 @@ int main(void) {
    
     Timer_Count_Int_StartEx(Timer_Count_Subroutine);
    
+    // Start Timer component
     Timer_1_Start();
-    
+    // Start VHF Radio UART component
     VHF_Radio_Start();
+    // UART debug component
     UART_Start();
     
+    // Set VHF Radio to Normal, please refer to the datasheet for more details. 
     VHF_Set_Mode(NORMAL);
+    CyDelay(10);
     
     UART_UartPutString("E50 - TTL - 500  VHF 170Mhz 27dBm\n");
     UART_UartPutString("Test program\n");
@@ -60,17 +64,20 @@ int main(void) {
   
     for(;;)
     {
-       sizeOfVhfBuffer = VHF_Radio_SpiUartGetRxBufferSize();
-        
+        // Get VHF Radio buffer size
+        sizeOfVhfBuffer = VHF_Radio_SpiUartGetRxBufferSize();
+        // Check if data have been received
         if (sizeOfVhfBuffer != 0) {
             {
                 uint8 i;
+                // Save data
                 for (i = 0; i < sizeOfVhfBuffer; i++){
                     vhfRxBuffer[i] = VHF_Radio_UartGetChar();
                     vhfRxBuffer[i+1] = '\0';
                 }
             }
-            UART_UartPutString(vhfRxBuffer);
+            // Debug
+            //UART_UartPutString(vhfRxBuffer);
             connectionStatus = 1;
             OnBoard_Led_Write(0u);
         }
@@ -78,14 +85,17 @@ int main(void) {
         
         // Save awaiting time
         start_awaiting = millis;
-        // Check if connection have been lost
-        // While AUX Pin is high and connection status is true
+        // Those lines below check if connection have been lost
+        // Only works when TX and RX send data each other at a periodic rate.
+        
+     
         while ( VHF_Aux_Pin_Read() && connectionStatus)  {
             // Start the timer 
             if (millis - start_awaiting > 5000) {
                 // if AUX  Pin is still high after 2s set connection status to false 
                 connectionStatus = 0;
                 OnBoard_Led_Write(1u);
+                // Debug
                 UART_UartPutString("No connection\n");
             }
             if (!VHF_Aux_Pin_Read())
